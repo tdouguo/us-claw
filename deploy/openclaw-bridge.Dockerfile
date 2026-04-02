@@ -1,5 +1,13 @@
-# Placeholder Dockerfile for the future OpenClaw bridge service.
-# Task 8 will replace this with the real build and runtime image.
-FROM alpine:3.20
+FROM node:24-alpine
 
-CMD ["sh", "-c", "echo openclaw-bridge Dockerfile placeholder"]
+WORKDIR /app
+
+COPY services/openclaw-bridge/package.json ./package.json
+COPY services/openclaw-bridge/tsconfig.json ./tsconfig.json
+RUN npm install
+
+COPY services/openclaw-bridge/src ./src
+
+EXPOSE 8787
+
+CMD ["npm", "run", "dev"]

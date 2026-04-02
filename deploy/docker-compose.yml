@@ -1,15 +1,29 @@
 services:
   web:
     profiles: ["demo", "full"]
-    image: alpine:3.20
-    command: ["sh", "-c", "echo us-claw web placeholder; sleep 1"]
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    ports:
+      - "4173:4173"
+    depends_on:
+      - control-plane
 
   control-plane:
     profiles: ["demo", "full"]
-    image: alpine:3.20
-    command: ["sh", "-c", "echo us-claw control-plane placeholder; sleep 1"]
+    build:
+      context: ..
+      dockerfile: deploy/control-plane.Dockerfile
+    ports:
+      - "8000:8000"
 
   openclaw-bridge:
     profiles: ["full"]
-    image: alpine:3.20
-    command: ["sh", "-c", "echo us-claw openclaw-bridge placeholder; sleep 1"]
+    build:
+      context: ..
+      dockerfile: deploy/openclaw-bridge.Dockerfile
+    environment:
+      OPENCLAW_HOME: ${OPENCLAW_HOME:-/root/.openclaw}
+      OPENCLAW_WORKSPACE: ${OPENCLAW_WORKSPACE:-/root/.openclaw/workspace}
+    ports:
+      - "8787:8787"

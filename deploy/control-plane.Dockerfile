@@ -1,5 +1,12 @@
-# Placeholder Dockerfile for the future control-plane service.
-# Task 8 will replace this with the real build and runtime image.
-FROM alpine:3.20
+FROM python:3.12-slim
 
-CMD ["sh", "-c", "echo control-plane Dockerfile placeholder"]
+WORKDIR /app
+
+RUN pip install --no-cache-dir "fastapi>=0.115.0,<1.0.0" "pydantic>=2.8.0,<3.0.0" "uvicorn>=0.30.0,<1.0.0"
+
+COPY apps/control-plane/pyproject.toml ./pyproject.toml
+COPY apps/control-plane/app ./app
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--app-dir", "/app"]
