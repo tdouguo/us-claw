@@ -173,13 +173,18 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 - `apps/web/`：统一三页签看板
 - `apps/control-plane/`：控制面 API
 - `services/openclaw-bridge/`：OpenClaw 安装/同步/运行时桥接
-- `deploy/`：后续 Docker 启动机制
-- `scripts/`：后续安装与 bootstrap 脚本
+- `deploy/`：`demo/full` Docker 启动定义
+- `scripts/`：OpenClaw 安装检测与 bootstrap 脚本
 
 当前状态需要特别说明：
 
-- 本轮完成的是运行层目录骨架与最小工程接缝预留
-- 这**不代表**三页签控制台、OpenClaw bridge、Docker 启动链路或安装脚本已经全部可用
+- 当前已具备运行层的最小工程闭环：三页签前端骨架、控制面 API、OpenClaw bridge、`deploy/docker-compose.yml`，以及 `scripts/install-openclaw.*` / `scripts/bootstrap-us-claw.*`
+- `apps/web/` 已实现 `Mission Control`、`Organization`、`OpenClaw Runtime` 三个主视图与基础观察卡，技术栈是 `Vite + React + TypeScript`
+- `apps/control-plane/` 已提供 `app/main.py`、`health / organization / tasks / runtime` 路由，以及覆盖这些入口的 `tests/`
+- `services/openclaw-bridge/` 已提供 `services/openclaw-bridge/src/index.ts` 入口和安装检测、运行时状态采集相关模块
+- `deploy/docker-compose.yml` 已支持 `demo/full` 两种 profile；宿主机端口默认映射为 `4173`、`8000`、`8787`，必要时可通过 `US_CLAW_WEB_PORT`、`US_CLAW_CONTROL_PLANE_PORT`、`US_CLAW_BRIDGE_PORT` 覆盖
+- 运行 `docker compose` 时，建议从仓库根目录使用 `-f deploy/docker-compose.yml`，或在 `deploy/` 目录内执行，避免破坏 `build.context: ..` 与 `dockerfile: deploy/*.Dockerfile` 的相对路径关系
+- 这**仍不代表**当前仓库已经在所有宿主机环境上完成 Docker、OpenClaw 与端口占用场景下的全链路联调
 
 首版运行层的目标不是立刻替代知识库，而是让当前项目逐步长出：
 
@@ -310,8 +315,8 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 │  └─ control-plane/        # 控制面 API 骨架
 ├─ services/
 │  └─ openclaw-bridge/      # OpenClaw bridge 骨架
-├─ deploy/                  # 后续 Docker 启动机制
-├─ scripts/                 # 后续安装与 bootstrap 脚本
+├─ deploy/                  # demo/full Docker 启动定义
+├─ scripts/                 # OpenClaw 安装检测与 bootstrap 脚本
 ├─ docs/                    # 正式汇总、索引、矩阵、架构图
 └─ .ai/
    ├─ plans/                # 计划、backlog、阶段收口文档

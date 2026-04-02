@@ -5,7 +5,7 @@ services:
       context: ..
       dockerfile: deploy/web.Dockerfile
     ports:
-      - "4173:4173"
+      - "${US_CLAW_WEB_PORT:-4173}:4173"
     depends_on:
       - control-plane
 
@@ -15,7 +15,7 @@ services:
       context: ..
       dockerfile: deploy/control-plane.Dockerfile
     ports:
-      - "8000:8000"
+      - "${US_CLAW_CONTROL_PLANE_PORT:-8000}:8000"
 
   openclaw-bridge:
     profiles: ["full"]
@@ -26,4 +26,4 @@ services:
       OPENCLAW_HOME: ${OPENCLAW_HOME:-/root/.openclaw}
       OPENCLAW_WORKSPACE: ${OPENCLAW_WORKSPACE:-/root/.openclaw/workspace}
     ports:
-      - "8787:8787"
+      - "${US_CLAW_BRIDGE_PORT:-8787}:8787"
