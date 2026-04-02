@@ -1,10 +1,56 @@
+import { useEffect, useMemo, useState } from "react";
+
+import { MissionControlView } from "../features/mission-control/MissionControlView";
+import { OrganizationView } from "../features/organization/OrganizationView";
+import { RuntimeView } from "../features/runtime/RuntimeView";
+
 const TABS = [
-  "Mission Control",
-  "Organization",
-  "OpenClaw Runtime"
-];
+  {
+    id: "mission-control",
+    hash: "",
+    label: "Mission Control",
+    render: () => <MissionControlView />
+  },
+  {
+    id: "organization",
+    hash: "#organization",
+    label: "Organization",
+    render: () => <OrganizationView />
+  },
+  {
+    id: "runtime",
+    hash: "#runtime",
+    label: "OpenClaw Runtime",
+    render: () => <RuntimeView />
+  }
+] as const;
+
+function tabFromHash(hash: string) {
+  return TABS.find((tab) => tab.hash === hash) ?? TABS[0];
+}
 
 export function App() {
+  const [activeTabId, setActiveTabId] = useState(() => tabFromHash(window.location.hash).id);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      setActiveTabId(tabFromHash(window.location.hash).id);
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
+  const activeTab = useMemo(
+    () => TABS.find((tab) => tab.id === activeTabId) ?? TABS[0],
+    [activeTabId]
+  );
+
+  const handleTabChange = (tabId: (typeof TABS)[number]["id"]) => {
+    const target = TABS.find((tab) => tab.id === tabId) ?? TABS[0];
+    window.history.replaceState({}, "", target.hash || "/");
+    setActiveTabId(target.id);
+  };
+
   return (
     <div className="shell">
       <header className="shell__header">
@@ -17,28 +63,24 @@ export function App() {
           Runtime skeleton initialized
         </div>
       </header>
-      <nav className="tabs" aria-label="Primary views">
+      <nav className="tabs" aria-label="Primary views" role="tablist">
         {TABS.map((tab) => (
-          <button className="tab" key={tab} type="button">
-            {tab}
+          <button
+            aria-selected={activeTab.id === tab.id}
+            className={`tab${activeTab.id === tab.id ? " tab--active" : ""}`}
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            role="tab"
+            type="button"
+          >
+            {tab.label}
           </button>
         ))}
       </nav>
       <main className="layout">
-        <section className="panel panel--main">
-          <h2>Control Plane Skeleton</h2>
-          <p>
-            当前阶段只初始化三页签统一控制台骨架。后续任务会依次接入任务编排、
-            组织角色浏览、OpenClaw bridge 与运行时监控。
-          </p>
-          <ul>
-            <li>Mission Control: 任务编排、审批链、回滚链</li>
-            <li>Organization: 实体/岗位/角色详情与任务入口</li>
-            <li>OpenClaw Runtime: 安装、bridge、workspace 与节点状态</li>
-          </ul>
-        </section>
+        {activeTab.render()}
         <aside className="panel panel--side">
-          <h2>Reserved Sidecar Areas</h2>
+          <h2>Observer Sidecar</h2>
           <ul>
             <li>Role details drawer</li>
             <li>Task event stream</li>
