@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -22,6 +23,41 @@ except ImportError:
     HAVE_FASTAPI = False
 
 
+class FakeRuntimeGateway:
+    def get_runtime_status(self, **_: object) -> dict[str, object]:
+        return {
+            "status": "ready",
+            "installed": True,
+            "bridge_status": "reachable",
+            "openclaw_home": "C:/Users/Administrator/.openclaw",
+            "openclaw_workspace_path": "C:/Users/Administrator/.openclaw/workspace",
+            "workspace_exists": True,
+            "workspace_registered": True,
+            "latest_sync_at": "2026-04-02T10:00:00+00:00",
+            "latest_error": None,
+            "bridge_url": "http://127.0.0.1:8787",
+        }
+
+    def list_events(self, limit: int = 10) -> list[dict[str, object]]:
+        return [
+            {
+                "timestamp": "2026-04-02T10:00:00+00:00",
+                "level": "info",
+                "event_type": "runtime_ready",
+                "message": "Runtime ready",
+            }
+        ][:limit]
+
+    def list_logs(self, limit: int = 20) -> list[dict[str, object]]:
+        return [
+            {
+                "timestamp": "2026-04-02T10:00:00+00:00",
+                "level": "info",
+                "message": "Bridge ready",
+            }
+        ][:limit]
+
+
 @unittest.skipUnless(HAVE_FASTAPI, "fastapi/testclient is not installed")
 class RuntimeApiTests(unittest.TestCase):
     @classmethod
@@ -36,6 +72,7 @@ class RuntimeApiTests(unittest.TestCase):
             catalog=self.catalog,
             task_store=TaskStore(self.db_path),
         )
+        app.state.runtime_gateway = FakeRuntimeGateway()
         self.client = TestClient(app)
 
     def tearDown(self) -> None:
@@ -55,11 +92,80 @@ class RuntimeApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         payload = response.json()
-        self.assertEqual(payload["bridge_status"], "not_configured")
+        self.assertEqual(payload["bridge_status"], "reachable")
+        self.assertEqual(payload["status"], "ready")
         self.assertEqual(payload["workspace_path"], str(ROOT))
         self.assertEqual(payload["database_path"], str(self.db_path))
         self.assertEqual(payload["task_count"], 1)
         self.assertGreater(payload["entity_count"], 0)
+
+    def test_runtime_events_endpoint_returns_recent_events(self) -> None:
+        response = self.client.get("/api/runtime/events")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload[0]["event_type"], "runtime_ready")
+
+    def test_runtime_logs_endpoint_returns_recent_logs(self) -> None:
+        response = self.client.get("/api/runtime/logs")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload[0]["message"], "Bridge ready")
+
+    def test_runtime_status_reports_not_installed_when_openclaw_home_is_missing(self) -> None:
+        self.client.close()
+        missing_home = Path(self.temp_dir.name) / "missing-openclaw-home"
+
+        with patch.dict(
+            "os.environ",
+            {
+                "OPENCLAW_HOME": str(missing_home),
+                "OPENCLAW_WORKSPACE": str(missing_home / "workspace"),
+                "US_CLAW_BRIDGE_URL": "http://127.0.0.1:37999",
+            },
+            clear=False,
+        ):
+            app = create_app(
+                workspace_root=ROOT,
+                catalog=self.catalog,
+                task_store=TaskStore(self.db_path),
+            )
+            self.client = TestClient(app)
+            response = self.client.get("/api/runtime/status")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "not_installed")
+        self.assertEqual(payload["bridge_status"], "unreachable")
+
+    def test_runtime_status_reports_bridge_unreachable_when_openclaw_home_exists(self) -> None:
+        self.client.close()
+        openclaw_home = Path(self.temp_dir.name) / ".openclaw"
+        workspace_root = openclaw_home / "workspace"
+        workspace_root.mkdir(parents=True, exist_ok=True)
+
+        with patch.dict(
+            "os.environ",
+            {
+                "OPENCLAW_HOME": str(openclaw_home),
+                "OPENCLAW_WORKSPACE": str(workspace_root),
+                "US_CLAW_BRIDGE_URL": "http://127.0.0.1:37999",
+            },
+            clear=False,
+        ):
+            app = create_app(
+                workspace_root=ROOT,
+                catalog=self.catalog,
+                task_store=TaskStore(self.db_path),
+            )
+            self.client = TestClient(app)
+            response = self.client.get("/api/runtime/status")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        self.assertEqual(payload["status"], "bridge_unreachable")
+        self.assertEqual(payload["bridge_status"], "unreachable")
 
 
 if __name__ == "__main__":

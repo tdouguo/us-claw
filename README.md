@@ -351,3 +351,36 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 
 这个项目的 README 组织方式，参考了 [cft0808/edict](https://github.com/cft0808/edict) 把“制度设计”讲成“可直接理解的 AI 架构”的写法。  
 但本项目的核心贡献，不是把古代制度换皮，而是把**现代美国联邦行政组织架构**系统化为一套适合 AI 多 agent 协作的角色、边界、流程与治理模型。
+
+---
+
+## Runtime Snapshot (Phase B)
+
+当前仓库已经不只是 `US Federal SOUL` 知识库，也已经具备 `control-plane / web / openclaw-bridge / bootstrap / deploy` 的运行时骨架。
+
+- `Phase A` 已完成：
+  - 三标签 Web 壳层
+  - organization / tasks / runtime API
+  - OpenClaw bridge 最小服务
+  - `demo/full` Docker profiles
+  - install / bootstrap 脚本
+- `Phase B` 当前聚焦：
+  - `task_events` 时间线与 `dashboard summary`
+  - OpenClaw runtime `status / events / logs`
+  - bootstrap 注册产物落盘
+  - `Mission Control / Organization / OpenClaw Runtime` 三页真实接数
+
+如果你是第一次进入运行时相关实现，建议顺序是：
+
+1. 先看 [docs/README.md](./docs/README.md)
+2. 再看 [scripts/README.md](./scripts/README.md) 与 [deploy/README.md](./deploy/README.md)
+3. 最后进入：
+   - `apps/control-plane`
+   - `apps/web`
+   - `services/openclaw-bridge`
+
+当前设计口径仍然保持不变：
+
+- `agents/` 是组织知识真源
+- `docs/` 是正式阅读层
+- `apps/` / `services/` / `deploy/` / `scripts/` 负责把这套知识库推成可运行的控制面与 runtime 观察层

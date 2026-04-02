@@ -1,38 +1,29 @@
 from __future__ import annotations
 
-from pathlib import Path
-import os
-
 from fastapi import APIRouter, Request
-
 
 router = APIRouter(prefix="/api/runtime", tags=["runtime"])
 
 
-def detect_openclaw_home() -> Path:
-    configured = os.environ.get("OPENCLAW_HOME")
-    if configured:
-        return Path(configured).expanduser()
-    return Path.home() / ".openclaw"
-
-
 @router.get("/status")
 def runtime_status(request: Request) -> dict[str, object]:
-    openclaw_home = detect_openclaw_home()
-    workspace_path = openclaw_home / "workspace"
-    installed = openclaw_home.exists()
-    task_store = request.app.state.task_store
-    catalog = request.app.state.catalog
-    return {
-        "installed": installed,
-        "version": None,
-        "openclaw_home": str(openclaw_home),
-        "workspace_path": str(request.app.state.workspace_root),
-        "openclaw_workspace_path": str(workspace_path),
-        "workspace_exists": workspace_path.exists(),
-        "database_path": str(task_store.db_path),
-        "task_count": len(task_store.list_tasks()),
-        "entity_count": len(catalog.list_entities()),
-        "bridge_status": "configured" if installed else "not_configured",
-        "latest_error": None if installed else "OpenClaw home not found",
-    }
+    runtime = request.app.state.runtime_gateway.get_runtime_status(
+        workspace_root=request.app.state.workspace_root,
+        task_store=request.app.state.task_store,
+        catalog=request.app.state.catalog,
+    )
+    runtime["workspace_path"] = str(request.app.state.workspace_root)
+    runtime["database_path"] = str(request.app.state.task_store.db_path)
+    runtime["task_count"] = len(request.app.state.task_store.list_tasks())
+    runtime["entity_count"] = len(request.app.state.catalog.list_entities())
+    return runtime
+
+
+@router.get("/events")
+def runtime_events(request: Request, limit: int = 10) -> list[dict[str, object]]:
+    return request.app.state.runtime_gateway.list_events(limit=limit)
+
+
+@router.get("/logs")
+def runtime_logs(request: Request, limit: int = 20) -> list[dict[str, object]]:
+    return request.app.state.runtime_gateway.list_logs(limit=limit)

@@ -1,9 +1,15 @@
+x-openclaw-runtime-volumes: &openclaw-runtime-volumes
+  - "${OPENCLAW_HOME:-./.codex-temp/openclaw-home}:/openclaw-host/home:ro"
+  - "${OPENCLAW_WORKSPACE:-./.codex-temp/openclaw-workspace}:/openclaw-host/workspace:ro"
+
 services:
   web:
     profiles: ["demo", "full"]
     build:
       context: ..
       dockerfile: deploy/web.Dockerfile
+    environment:
+      US_CLAW_CONTROL_PLANE_URL: http://control-plane:8000
     ports:
       - "${US_CLAW_WEB_PORT:-4173}:4173"
     depends_on:
@@ -14,8 +20,13 @@ services:
     build:
       context: ..
       dockerfile: deploy/control-plane.Dockerfile
+    environment:
+      US_CLAW_BRIDGE_URL: http://openclaw-bridge:8787
+      OPENCLAW_HOME: /openclaw-host/home
+      OPENCLAW_WORKSPACE: /openclaw-host/workspace
     ports:
       - "${US_CLAW_CONTROL_PLANE_PORT:-8000}:8000"
+    volumes: *openclaw-runtime-volumes
 
   openclaw-bridge:
     profiles: ["full"]
@@ -23,7 +34,8 @@ services:
       context: ..
       dockerfile: deploy/openclaw-bridge.Dockerfile
     environment:
-      OPENCLAW_HOME: ${OPENCLAW_HOME:-/root/.openclaw}
-      OPENCLAW_WORKSPACE: ${OPENCLAW_WORKSPACE:-/root/.openclaw/workspace}
+      OPENCLAW_HOME: /openclaw-host/home
+      OPENCLAW_WORKSPACE: /openclaw-host/workspace
     ports:
       - "${US_CLAW_BRIDGE_PORT:-8787}:8787"
+    volumes: *openclaw-runtime-volumes

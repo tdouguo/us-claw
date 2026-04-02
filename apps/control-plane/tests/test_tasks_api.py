@@ -33,6 +33,23 @@ class TaskStoreTests(unittest.TestCase):
             transitioned = store.transition_task(task["id"], "intake_review")
             self.assertEqual(transitioned["state"], "intake_review")
 
+    def test_store_records_events_for_create_and_transition(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = TaskStore(db_path=Path(temp_dir) / "tasks.db")
+            task = store.create_task({"title": "Track timeline"})
+            store.transition_task(task["id"], "intake_review")
+            events = store.list_task_events(task["id"])
+            self.assertEqual([item["event_type"] for item in events], ["task_state_changed", "task_created"])
+            self.assertEqual(events[0]["to_state"], "intake_review")
+            self.assertEqual(events[1]["to_state"], "draft")
+
+    def test_store_can_fetch_task_by_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = TaskStore(db_path=Path(temp_dir) / "tasks.db")
+            task = store.create_task({"title": "Lookup task"})
+            self.assertEqual(store.get_task(task["id"])["id"], task["id"])
+            self.assertIsNone(store.get_task("does-not-exist"))
+
 
 @unittest.skipUnless(HAVE_FASTAPI, "fastapi/testclient is not installed")
 class TasksApiTests(unittest.TestCase):
@@ -59,3 +76,25 @@ class TasksApiTests(unittest.TestCase):
         tasks_response = self.client.get("/api/tasks")
         self.assertEqual(tasks_response.status_code, 200)
         self.assertTrue(any(item["id"] == created["id"] for item in tasks_response.json()))
+
+    def test_task_events_endpoint_returns_timeline(self) -> None:
+        create_response = self.client.post(
+            "/api/tasks",
+            json={"title": "Timeline task"},
+        )
+        created = create_response.json()
+        self.client.post(
+            f"/api/tasks/{created['id']}/transition",
+            json={"to_state": "intake_review"},
+        )
+
+        response = self.client.get(f"/api/tasks/{created['id']}/events")
+
+        self.assertEqual(response.status_code, 200)
+        body = response.json()
+        self.assertEqual([item["event_type"] for item in body], ["task_state_changed", "task_created"])
+
+    def test_task_events_endpoint_returns_404_for_missing_task(self) -> None:
+        response = self.client.get("/api/tasks/does-not-exist/events")
+
+        self.assertEqual(response.status_code, 404)

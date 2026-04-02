@@ -86,6 +86,21 @@ class TaskStore:
                 )
                 """
             )
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS task_events (
+                    id TEXT PRIMARY KEY,
+                    task_id TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    message TEXT NOT NULL,
+                    details TEXT NOT NULL,
+                    from_state TEXT NOT NULL,
+                    to_state TEXT NOT NULL,
+                    metadata TEXT NOT NULL,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
 
     def list_tasks(self) -> list[dict[str, object]]:
         with closing(self._connect()) as connection:
@@ -93,7 +108,7 @@ class TaskStore:
                 """
                 SELECT *
                 FROM tasks
-                ORDER BY datetime(created_at) DESC, id DESC
+                ORDER BY created_at DESC, id DESC
                 """
             ).fetchall()
         return [self._row_to_task(row) for row in rows]
@@ -126,7 +141,25 @@ class TaskStore:
                     now,
                 ),
             )
+            self._insert_event(
+                connection,
+                task_id=task_id,
+                event_type="task_created",
+                message="Task created",
+                details=str(payload["title"]),
+                from_state="",
+                to_state=TaskState.DRAFT.value,
+                metadata={"review_requirements": payload.get("review_requirements", [])},
+                created_at=now,
+            )
             row = connection.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        return self._row_to_task(row)
+
+    def get_task(self, task_id: str) -> dict[str, object] | None:
+        with closing(self._connect()) as connection:
+            row = connection.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
+        if row is None:
+            return None
         return self._row_to_task(row)
 
     def transition_task(self, task_id: str, to_state: str) -> dict[str, object]:
@@ -143,8 +176,80 @@ class TaskStore:
                 "UPDATE tasks SET state = ?, updated_at = ? WHERE id = ?",
                 (target.value, updated_at, task_id),
             )
+            self._insert_event(
+                connection,
+                task_id=task_id,
+                event_type="task_state_changed",
+                message=f"Task moved to {target.value}",
+                details="Task state transition",
+                from_state=current.value,
+                to_state=target.value,
+                metadata={},
+                created_at=updated_at,
+            )
             updated = connection.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
         return self._row_to_task(updated)
+
+    def list_task_events(self, task_id: str) -> list[dict[str, object]]:
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                """
+                SELECT task_events.*, tasks.title AS task_title
+                FROM task_events
+                JOIN tasks ON tasks.id = task_events.task_id
+                WHERE task_events.task_id = ?
+                ORDER BY task_events.rowid DESC
+                """,
+                (task_id,),
+            ).fetchall()
+        return [self._row_to_event(row) for row in rows]
+
+    def list_events(self, limit: int = 20) -> list[dict[str, object]]:
+        with closing(self._connect()) as connection:
+            rows = connection.execute(
+                """
+                SELECT task_events.*, tasks.title AS task_title
+                FROM task_events
+                JOIN tasks ON tasks.id = task_events.task_id
+                ORDER BY task_events.rowid DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return [self._row_to_event(row) for row in rows]
+
+    def _insert_event(
+        self,
+        connection: sqlite3.Connection,
+        *,
+        task_id: str,
+        event_type: str,
+        message: str,
+        details: str,
+        from_state: str,
+        to_state: str,
+        metadata: dict[str, object],
+        created_at: str,
+    ) -> None:
+        connection.execute(
+            """
+            INSERT INTO task_events (
+                id, task_id, event_type, message, details,
+                from_state, to_state, metadata, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                str(uuid.uuid4()),
+                task_id,
+                event_type,
+                message,
+                details,
+                from_state,
+                to_state,
+                json.dumps(metadata, ensure_ascii=False),
+                created_at,
+            ),
+        )
 
     @staticmethod
     def _row_to_task(row: sqlite3.Row) -> dict[str, object]:
@@ -162,4 +267,19 @@ class TaskStore:
             "state": row["state"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
+        }
+
+    @staticmethod
+    def _row_to_event(row: sqlite3.Row) -> dict[str, object]:
+        return {
+            "id": row["id"],
+            "task_id": row["task_id"],
+            "task_title": row["task_title"],
+            "event_type": row["event_type"],
+            "message": row["message"],
+            "details": row["details"],
+            "from_state": row["from_state"],
+            "to_state": row["to_state"],
+            "metadata": json.loads(row["metadata"]),
+            "created_at": row["created_at"],
         }

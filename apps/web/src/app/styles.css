@@ -16,8 +16,15 @@ body {
     linear-gradient(180deg, #f5f8fb 0%, #e8edf4 100%);
 }
 
-button {
+button,
+input,
+select,
+textarea {
   font: inherit;
+}
+
+button {
+  color: inherit;
 }
 
 .shell {
@@ -41,18 +48,32 @@ button {
   color: #5d728d;
 }
 
-.shell__header h1 {
+.eyebrow--compact {
+  margin-bottom: 4px;
+}
+
+.shell__header h1,
+.panel h2,
+.panel h3 {
   margin: 0;
+}
+
+.shell__header h1 {
   font-size: 30px;
   line-height: 1.15;
 }
 
 .status-card,
 .tab,
-.panel {
+.panel,
+.metric-card,
+.task-card,
+.entity-card,
+.role-card,
+.runtime-item {
   border: 1px solid rgba(32, 50, 75, 0.1);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.88);
   box-shadow: 0 20px 40px rgba(20, 33, 49, 0.08);
 }
 
@@ -91,7 +112,7 @@ button {
 
 .layout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
   gap: 20px;
 }
 
@@ -99,12 +120,314 @@ button {
   padding: 24px;
 }
 
-.panel h2 {
-  margin-top: 0;
+.panel--side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.panel ul {
-  margin-bottom: 0;
+.sidecar-title {
+  font-size: 24px;
+}
+
+.sidecar-description,
+.section-intro,
+.subtle-text,
+.task-card p,
+.timeline__item p {
+  margin: 0;
+  color: #5d728d;
+  line-height: 1.5;
+}
+
+.sidecar-list,
+.stack,
+.timeline {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.section-header,
+.org-panel__header,
+.runtime-item__header,
+.task-card__header,
+.task-card__footer,
+.kanban-column__header,
+.timeline__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-header {
+  margin-bottom: 20px;
+}
+
+.metrics-grid,
+.filter-grid,
+.kanban-grid,
+.org-grid,
+.org-launcher,
+.runtime-grid,
+.detail-grid,
+.checkbox-grid,
+.tag-row {
+  display: grid;
+  gap: 16px;
+}
+
+.metrics-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-bottom: 20px;
+}
+
+.metric-card {
+  padding: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.metric-card__label {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #5d728d;
+}
+
+.metric-card__value {
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.metric-card__detail {
+  color: #5d728d;
+  font-size: 13px;
+}
+
+.field,
+.field-group {
+  display: grid;
+  gap: 8px;
+}
+
+.field span,
+.field-group legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: #314966;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(32, 50, 75, 0.14);
+  border-radius: 12px;
+  background: #fbfdff;
+}
+
+.field textarea {
+  resize: vertical;
+}
+
+.kanban-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.kanban-column,
+.org-panel,
+.runtime-panel,
+.runtime-error-summary {
+  border: 1px solid rgba(32, 50, 75, 0.12);
+  border-radius: 20px;
+  background: rgba(245, 248, 252, 0.82);
+  padding: 18px;
+}
+
+.kanban-column__body,
+.launch-form {
+  display: grid;
+  gap: 14px;
+}
+
+.task-card,
+.entity-card,
+.role-card,
+.runtime-item,
+.primary-button {
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.task-card,
+.entity-card,
+.role-card,
+.runtime-item {
+  display: grid;
+  gap: 10px;
+}
+
+.task-card__meta {
+  color: #5d728d;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.task-card--selected,
+.entity-card--selected,
+.role-card--selected {
+  border-color: rgba(22, 83, 152, 0.35);
+  box-shadow: 0 24px 44px rgba(21, 52, 92, 0.14);
+}
+
+.task-card__footer,
+.runtime-item span,
+.entity-card span,
+.role-card span {
+  color: #5d728d;
+  font-size: 13px;
+}
+
+.tag-row {
+  grid-template-columns: repeat(auto-fit, minmax(96px, max-content));
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(21, 52, 92, 0.08);
+  color: #15345c;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tag--high,
+.error-banner {
+  background: rgba(177, 42, 42, 0.1);
+  color: #8f2020;
+}
+
+.tag--critical {
+  background: rgba(120, 14, 14, 0.12);
+  color: #6c0c0c;
+}
+
+.tag--normal,
+.success-banner {
+  background: rgba(29, 143, 85, 0.12);
+  color: #1d7345;
+}
+
+.tag--neutral {
+  background: rgba(21, 52, 92, 0.08);
+  color: #15345c;
+}
+
+.detail-grid {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.detail-grid__label {
+  display: block;
+  margin-bottom: 4px;
+  color: #5d728d;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.section-heading {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.field-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.checkbox-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.primary-button {
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #15345c, #2b5f9e);
+  color: #f8fbff;
+  text-align: center;
+}
+
+.secondary-button {
+  border: 1px solid rgba(21, 52, 92, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #15345c;
+  cursor: pointer;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.primary-button:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.secondary-button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.timeline {
+  padding-left: 0;
+  list-style: none;
+}
+
+.timeline__item {
+  border-left: 2px solid rgba(21, 52, 92, 0.16);
+  padding-left: 12px;
+}
+
+.timeline__meta {
+  color: #5d728d;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.runtime-grid,
+.org-grid,
+.org-launcher {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.runtime-error-summary,
+.org-grid {
+  margin-bottom: 20px;
+}
+
+.success-banner,
+.error-banner {
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin: 0 0 16px;
 }
 
 @media (max-width: 900px) {
@@ -113,9 +436,11 @@ button {
   }
 
   .shell__header,
-  .tabs,
+  .tabs {
+    flex-direction: column;
+  }
+
   .layout {
     grid-template-columns: 1fr;
-    flex-direction: column;
   }
 }

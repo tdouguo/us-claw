@@ -36,6 +36,14 @@ def list_tasks(request: Request) -> list[dict[str, Any]]:
     return get_task_store(request).list_tasks()
 
 
+@router.get("/{task_id}/events")
+def list_task_events(task_id: str, request: Request) -> list[dict[str, Any]]:
+    task_store = get_task_store(request)
+    if task_store.get_task(task_id) is None:
+        raise HTTPException(status_code=404, detail=f"task not found: {task_id}")
+    return task_store.list_task_events(task_id)
+
+
 @router.post("")
 def create_task(payload: CreateTaskRequest, request: Request) -> dict[str, Any]:
     return get_task_store(request).create_task(payload.model_dump())
