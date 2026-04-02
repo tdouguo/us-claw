@@ -55,5 +55,6 @@ docker compose --env-file .\.env -f .\deploy\docker-compose.yml --profile full u
 
 - `deploy/docker-compose.yml` 负责组织 `demo/full` 两种运行模式
 - 各服务镜像仍分别由 `deploy/*.Dockerfile` 构建
+- `control-plane` 镜像会连同 `agents/` 与 `docs/` 一起打包，用于在容器内解析组织事实源
 - `full` 模式下的 `OPENCLAW_HOME`、`OPENCLAW_WORKSPACE` 由环境变量传入
 - `full` 模式是否能完整跑通，仍取决于宿主机是否已具备 Docker 与 OpenClaw 运行条件

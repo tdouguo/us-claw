@@ -6,6 +6,8 @@ RUN pip install --no-cache-dir "fastapi>=0.115.0,<1.0.0" "pydantic>=2.8.0,<3.0.0
 
 COPY apps/control-plane/pyproject.toml ./pyproject.toml
 COPY apps/control-plane/app ./app
+COPY agents ./agents
+COPY docs ./docs
 
 EXPOSE 8000
 
