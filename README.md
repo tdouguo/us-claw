@@ -160,6 +160,52 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 
 这部分不是给第一次读仓库的人直接消费的，而是给持续迭代这套体系的人使用。
 
+### 4. `Runtime / Control Plane`：运行层骨架
+
+当前仓库已经开始补运行层骨架，但需要明确边界：
+
+- `agents/` 仍然是事实源，不会被运行层替代
+- `docs/` 仍然是正式阅读层，不会被 UI 取代
+- 新增的运行层目录用于把这套知识库推进成一个可运行的控制面系统
+
+当前已开始建立的目录包括：
+
+- `apps/web/`：统一三页签看板
+- `apps/control-plane/`：控制面 API
+- `services/openclaw-bridge/`：OpenClaw 安装/同步/运行时桥接
+- `deploy/`：`demo/full` Docker 启动定义
+- `scripts/`：OpenClaw 安装检测与 bootstrap 脚本
+
+当前状态需要特别说明：
+
+- 当前已具备运行层的最小工程闭环：三页签前端骨架、控制面 API、OpenClaw bridge、`deploy/docker-compose.yml`，以及 `scripts/install-openclaw.*` / `scripts/bootstrap-us-claw.*`
+- `apps/web/` 已实现 `Mission Control`、`Organization`、`OpenClaw Runtime` 三个主视图与基础观察卡，技术栈是 `Vite + React + TypeScript`
+- `apps/control-plane/` 已提供 `app/main.py`、`health / organization / tasks / runtime` 路由，以及覆盖这些入口的 `tests/`
+- `services/openclaw-bridge/` 已提供 `services/openclaw-bridge/src/index.ts` 入口和安装检测、运行时状态采集相关模块
+- `deploy/docker-compose.yml` 已支持 `demo/full` 两种 profile；宿主机端口默认映射为 `4173`、`8000`、`8787`，必要时可通过 `US_CLAW_WEB_PORT`、`US_CLAW_CONTROL_PLANE_PORT`、`US_CLAW_BRIDGE_PORT` 覆盖
+- 运行 `docker compose` 时，建议从仓库根目录使用 `-f deploy/docker-compose.yml`，或在 `deploy/` 目录内执行，避免破坏 `build.context: ..` 与 `dockerfile: deploy/*.Dockerfile` 的相对路径关系
+- 这**仍不代表**当前仓库已经在所有宿主机环境上完成 Docker、OpenClaw 与端口占用场景下的全链路联调
+
+首版运行层的目标不是立刻替代知识库，而是让当前项目逐步长出：
+
+- `Mission Control`
+- `Organization`
+- `OpenClaw Runtime`
+
+三个一级页签，以及与之对应的任务编排、组织角色浏览和运行时监控能力。
+
+如果你是第一次进入这个仓库，仍然建议先看：
+
+- `docs/`
+- `agents/`
+
+只有在参与控制面与运行层实现时，再进入：
+
+- `apps/`
+- `services/`
+- `deploy/`
+- `scripts/`
+
 ---
 
 ## 当前覆盖范围
@@ -263,12 +309,19 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 
 ```text
 .
-├─ agents/        # 岗位 SOUL 原始库
-├─ docs/          # 正式汇总、索引、矩阵、架构图
+├─ agents/                  # 岗位 SOUL 原始库
+├─ apps/
+│  ├─ web/                  # 三页签看板骨架
+│  └─ control-plane/        # 控制面 API 骨架
+├─ services/
+│  └─ openclaw-bridge/      # OpenClaw bridge 骨架
+├─ deploy/                  # demo/full Docker 启动定义
+├─ scripts/                 # OpenClaw 安装检测与 bootstrap 脚本
+├─ docs/                    # 正式汇总、索引、矩阵、架构图
 └─ .ai/
-   ├─ plans/      # 计划、backlog、阶段收口文档
-   ├─ memory/     # 结构化对话记录
-   └─ tools/      # 生成、同步、校验脚本
+   ├─ plans/                # 计划、backlog、阶段收口文档
+   ├─ memory/               # 结构化对话记录
+   └─ tools/                # 生成、同步、校验脚本
 ```
 
 ---

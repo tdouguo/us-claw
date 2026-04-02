@@ -1,3 +1,8 @@
 .codex-temp/
+.ai/state/
 __pycache__/
 *.pyc
+node_modules/
+dist/
+.venv/
+.pytest_cache/
