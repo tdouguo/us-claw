@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import closing
 from datetime import datetime, timezone
 from pathlib import Path
 import json
@@ -65,7 +66,7 @@ class TaskStore:
         return connection
 
     def _init_db(self) -> None:
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS tasks (
@@ -87,7 +88,7 @@ class TaskStore:
             )
 
     def list_tasks(self) -> list[dict[str, object]]:
-        with self._connect() as connection:
+        with closing(self._connect()) as connection:
             rows = connection.execute(
                 """
                 SELECT *
@@ -100,7 +101,7 @@ class TaskStore:
     def create_task(self, payload: dict[str, object]) -> dict[str, object]:
         now = datetime.now(timezone.utc).isoformat()
         task_id = str(uuid.uuid4())
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             connection.execute(
                 """
                 INSERT INTO tasks (
@@ -130,7 +131,7 @@ class TaskStore:
 
     def transition_task(self, task_id: str, to_state: str) -> dict[str, object]:
         target = TaskState(to_state)
-        with self._connect() as connection:
+        with closing(self._connect()) as connection, connection:
             row = connection.execute("SELECT * FROM tasks WHERE id = ?", (task_id,)).fetchone()
             if row is None:
                 raise KeyError(f"task not found: {task_id}")
