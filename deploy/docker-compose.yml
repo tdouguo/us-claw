@@ -1,0 +1,15 @@
+services:
+  web:
+    profiles: ["demo", "full"]
+    image: alpine:3.20
+    command: ["sh", "-c", "echo us-claw web placeholder; sleep 1"]
+
+  control-plane:
+    profiles: ["demo", "full"]
+    image: alpine:3.20
+    command: ["sh", "-c", "echo us-claw control-plane placeholder; sleep 1"]
+
+  openclaw-bridge:
+    profiles: ["full"]
+    image: alpine:3.20
+    command: ["sh", "-c", "echo us-claw openclaw-bridge placeholder; sleep 1"]

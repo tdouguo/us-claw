@@ -160,6 +160,47 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 
 这部分不是给第一次读仓库的人直接消费的，而是给持续迭代这套体系的人使用。
 
+### 4. `Runtime / Control Plane`：运行层骨架
+
+当前仓库已经开始补运行层骨架，但需要明确边界：
+
+- `agents/` 仍然是事实源，不会被运行层替代
+- `docs/` 仍然是正式阅读层，不会被 UI 取代
+- 新增的运行层目录用于把这套知识库推进成一个可运行的控制面系统
+
+当前已开始建立的目录包括：
+
+- `apps/web/`：统一三页签看板
+- `apps/control-plane/`：控制面 API
+- `services/openclaw-bridge/`：OpenClaw 安装/同步/运行时桥接
+- `deploy/`：后续 Docker 启动机制
+- `scripts/`：后续安装与 bootstrap 脚本
+
+当前状态需要特别说明：
+
+- 本轮完成的是运行层目录骨架与最小工程接缝预留
+- 这**不代表**三页签控制台、OpenClaw bridge、Docker 启动链路或安装脚本已经全部可用
+
+首版运行层的目标不是立刻替代知识库，而是让当前项目逐步长出：
+
+- `Mission Control`
+- `Organization`
+- `OpenClaw Runtime`
+
+三个一级页签，以及与之对应的任务编排、组织角色浏览和运行时监控能力。
+
+如果你是第一次进入这个仓库，仍然建议先看：
+
+- `docs/`
+- `agents/`
+
+只有在参与控制面与运行层实现时，再进入：
+
+- `apps/`
+- `services/`
+- `deploy/`
+- `scripts/`
+
 ---
 
 ## 当前覆盖范围
@@ -263,12 +304,19 @@ agents/{entity_slug}/{role_slug}/SOUL.md
 
 ```text
 .
-├─ agents/        # 岗位 SOUL 原始库
-├─ docs/          # 正式汇总、索引、矩阵、架构图
+├─ agents/                  # 岗位 SOUL 原始库
+├─ apps/
+│  ├─ web/                  # 三页签看板骨架
+│  └─ control-plane/        # 控制面 API 骨架
+├─ services/
+│  └─ openclaw-bridge/      # OpenClaw bridge 骨架
+├─ deploy/                  # 后续 Docker 启动机制
+├─ scripts/                 # 后续安装与 bootstrap 脚本
+├─ docs/                    # 正式汇总、索引、矩阵、架构图
 └─ .ai/
-   ├─ plans/      # 计划、backlog、阶段收口文档
-   ├─ memory/     # 结构化对话记录
-   └─ tools/      # 生成、同步、校验脚本
+   ├─ plans/                # 计划、backlog、阶段收口文档
+   ├─ memory/               # 结构化对话记录
+   └─ tools/                # 生成、同步、校验脚本
 ```
 
 ---
