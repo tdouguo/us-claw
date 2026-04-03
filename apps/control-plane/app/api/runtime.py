@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
+
+from app.services.runtime_gateway import RuntimeTelemetryUnavailable
 
 router = APIRouter(prefix="/api/runtime", tags=["runtime"])
 
@@ -21,9 +23,19 @@ def runtime_status(request: Request) -> dict[str, object]:
 
 @router.get("/events")
 def runtime_events(request: Request, limit: int = 10) -> list[dict[str, object]]:
-    return request.app.state.runtime_gateway.list_events(limit=limit)
+    if limit <= 0:
+        raise HTTPException(status_code=400, detail="limit must be a positive integer")
+    try:
+        return request.app.state.runtime_gateway.list_events(limit=limit)
+    except RuntimeTelemetryUnavailable as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
 
 
 @router.get("/logs")
 def runtime_logs(request: Request, limit: int = 20) -> list[dict[str, object]]:
-    return request.app.state.runtime_gateway.list_logs(limit=limit)
+    if limit <= 0:
+        raise HTTPException(status_code=400, detail="limit must be a positive integer")
+    try:
+        return request.app.state.runtime_gateway.list_logs(limit=limit)
+    except RuntimeTelemetryUnavailable as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc

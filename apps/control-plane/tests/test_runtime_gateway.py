@@ -11,7 +11,7 @@ CONTROL_PLANE_DIR = ROOT / "apps" / "control-plane"
 if str(CONTROL_PLANE_DIR) not in sys.path:
     sys.path.insert(0, str(CONTROL_PLANE_DIR))
 
-from app.services.runtime_gateway import RuntimeGateway
+from app.services.runtime_gateway import RuntimeGateway, RuntimeTelemetryUnavailable
 from app.services.soul_catalog import SoulCatalog
 from app.services.task_store import TaskStore
 
@@ -98,6 +98,26 @@ class RuntimeGatewayTests(unittest.TestCase):
             str(workspace_root / "us-claw"),
         )
         self.assertFalse(payload["workspace_exists"])
+
+    def test_list_events_raises_when_bridge_feed_is_unavailable(self) -> None:
+        gateway = RuntimeGateway("http://openclaw-bridge:8787")
+
+        with patch.object(gateway, "_fetch_json", return_value=None):
+            with self.assertRaisesRegex(
+                RuntimeTelemetryUnavailable,
+                "Runtime events are unavailable from the OpenClaw bridge.",
+            ):
+                gateway.list_events(limit=10)
+
+    def test_list_logs_raises_when_bridge_feed_is_unavailable(self) -> None:
+        gateway = RuntimeGateway("http://openclaw-bridge:8787")
+
+        with patch.object(gateway, "_fetch_json", return_value=None):
+            with self.assertRaisesRegex(
+                RuntimeTelemetryUnavailable,
+                "Runtime logs are unavailable from the OpenClaw bridge.",
+            ):
+                gateway.list_logs(limit=20)
 
 
 if __name__ == "__main__":

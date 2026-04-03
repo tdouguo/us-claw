@@ -76,7 +76,8 @@ docker compose --env-file .\.env -f .\deploy\docker-compose.yml --profile full u
 - `OPENCLAW_HOME` / `OPENCLAW_WORKSPACE` 会被挂载到容器内：
   - `/openclaw-host/home`
   - `/openclaw-host/workspace`
-- 如果未显式设置这两个变量，compose 会回退到仓库内的 `./.codex-temp/openclaw-home` 与 `./.codex-temp/openclaw-workspace`
+- 如果未显式设置这两个变量，compose 会回退到仓库根目录的 `../.codex-temp/openclaw-home` 与 `../.codex-temp/openclaw-workspace`
+  - 因为相对路径按 `deploy/docker-compose.yml` 所在目录解析，最终对应的宿主机位置仍是仓库根 `.codex-temp/...`
 
 ## 预期产物
 

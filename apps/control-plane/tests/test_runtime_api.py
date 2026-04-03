@@ -15,6 +15,7 @@ try:
     from fastapi.testclient import TestClient
 
     from app.main import create_app
+    from app.services.runtime_gateway import RuntimeTelemetryUnavailable
     from app.services.soul_catalog import SoulCatalog
     from app.services.task_store import TaskStore
 
@@ -56,6 +57,14 @@ class FakeRuntimeGateway:
                 "message": "Bridge ready",
             }
         ][:limit]
+
+
+class FailingRuntimeGateway(FakeRuntimeGateway):
+    def list_events(self, limit: int = 10) -> list[dict[str, object]]:
+        raise RuntimeTelemetryUnavailable("Runtime events are unavailable from the OpenClaw bridge.")
+
+    def list_logs(self, limit: int = 20) -> list[dict[str, object]]:
+        raise RuntimeTelemetryUnavailable("Runtime logs are unavailable from the OpenClaw bridge.")
 
 
 @unittest.skipUnless(HAVE_FASTAPI, "fastapi/testclient is not installed")
@@ -112,6 +121,51 @@ class RuntimeApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.json()
         self.assertEqual(payload[0]["message"], "Bridge ready")
+
+    def test_runtime_events_endpoint_returns_502_when_bridge_feed_fails(self) -> None:
+        self.client.close()
+        app = create_app(
+            workspace_root=ROOT,
+            catalog=self.catalog,
+            task_store=TaskStore(self.db_path),
+        )
+        app.state.runtime_gateway = FailingRuntimeGateway()
+        self.client = TestClient(app)
+
+        response = self.client.get("/api/runtime/events")
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(
+            response.json()["detail"],
+            "Runtime events are unavailable from the OpenClaw bridge.",
+        )
+
+    def test_runtime_logs_endpoint_returns_502_when_bridge_feed_fails(self) -> None:
+        self.client.close()
+        app = create_app(
+            workspace_root=ROOT,
+            catalog=self.catalog,
+            task_store=TaskStore(self.db_path),
+        )
+        app.state.runtime_gateway = FailingRuntimeGateway()
+        self.client = TestClient(app)
+
+        response = self.client.get("/api/runtime/logs")
+
+        self.assertEqual(response.status_code, 502)
+        self.assertEqual(
+            response.json()["detail"],
+            "Runtime logs are unavailable from the OpenClaw bridge.",
+        )
+
+    def test_runtime_endpoints_reject_non_positive_limits(self) -> None:
+        events_response = self.client.get("/api/runtime/events?limit=-1")
+        logs_response = self.client.get("/api/runtime/logs?limit=0")
+
+        self.assertEqual(events_response.status_code, 400)
+        self.assertEqual(logs_response.status_code, 400)
+        self.assertEqual(events_response.json()["detail"], "limit must be a positive integer")
+        self.assertEqual(logs_response.json()["detail"], "limit must be a positive integer")
 
     def test_runtime_status_reports_not_installed_when_openclaw_home_is_missing(self) -> None:
         self.client.close()

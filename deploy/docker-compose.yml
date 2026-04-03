@@ -1,6 +1,6 @@
 x-openclaw-runtime-volumes: &openclaw-runtime-volumes
-  - "${OPENCLAW_HOME:-./.codex-temp/openclaw-home}:/openclaw-host/home:ro"
-  - "${OPENCLAW_WORKSPACE:-./.codex-temp/openclaw-workspace}:/openclaw-host/workspace:ro"
+  - "${OPENCLAW_HOME:-../.codex-temp/openclaw-home}:/openclaw-host/home:ro"
+  - "${OPENCLAW_WORKSPACE:-../.codex-temp/openclaw-workspace}:/openclaw-host/workspace:ro"
 
 services:
   web:
