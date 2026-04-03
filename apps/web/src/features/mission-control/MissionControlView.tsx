@@ -314,6 +314,11 @@ export function MissionControlView({ setSidecar }: MissionControlViewProps) {
     }
   }, [filteredTasks, selectedTaskId]);
 
+  useEffect(() => {
+    setActionFeedback(null);
+    setActionError(null);
+  }, [selectedTaskId]);
+
   const selectedTask = useMemo(
     () => filteredTasks.find((task) => task.id === selectedTaskId) ?? null,
     [filteredTasks, selectedTaskId]

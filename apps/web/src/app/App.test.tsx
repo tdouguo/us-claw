@@ -184,6 +184,7 @@ const ORGANIZATION_ROLES = [
 ];
 
 const SECRETARY_OF_STATE = ORGANIZATION_ROLES[0];
+const DEPUTY_SECRETARY_OF_STATE = ORGANIZATION_ROLES[1];
 
 const RUNTIME_STATUS = {
   status: "ready",
@@ -316,6 +317,9 @@ function setupDefaultFetchMock(overrides: RouteMap = {}) {
     },
     "/api/organization/roles/department_of_state/secretary_of_state": {
       body: SECRETARY_OF_STATE
+    },
+    "/api/organization/roles/department_of_state/deputy_secretary_of_state": {
+      body: DEPUTY_SECRETARY_OF_STATE
     },
     "POST /api/tasks": {
       body: {
@@ -574,6 +578,55 @@ describe("App", () => {
     });
   });
 
+  it("prevents launching with the previous role when same-entity role detail fails", async () => {
+    setupDefaultFetchMock({
+      "/api/organization/roles/department_of_state/deputy_secretary_of_state": {
+        status: 500,
+        body: {
+          detail: "Deputy Secretary detail unavailable."
+        }
+      }
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Organization" }));
+    fireEvent.change(await screen.findByLabelText("Task Title"), {
+      target: { value: "Same entity switch" }
+    });
+    fireEvent.click(screen.getByRole("button", { name: /open role deputy secretary of state/i }));
+
+    expect(await screen.findByText("Deputy Secretary detail unavailable.")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Create Task" }).hasAttribute("disabled")).toBe(true);
+    });
+  });
+
+  it("clears role detail errors after a later successful role selection", async () => {
+    setupDefaultFetchMock({
+      "/api/organization/roles/department_of_state/deputy_secretary_of_state": {
+        status: 500,
+        body: {
+          detail: "Deputy Secretary detail unavailable."
+        }
+      }
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("tab", { name: "Organization" }));
+    expect(await screen.findByRole("button", { name: /open role deputy secretary of state/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /open role deputy secretary of state/i }));
+    expect(await screen.findByText("Deputy Secretary detail unavailable.")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /open role secretary of state/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Deputy Secretary detail unavailable.")).toBeNull();
+    });
+    expect(screen.getByRole("button", { name: /open role secretary of state/i })).toBeTruthy();
+  });
+
   it("switches the sidecar to a visible task when filters exclude the current selection", async () => {
     setupDefaultFetchMock();
 
@@ -611,6 +664,79 @@ describe("App", () => {
 
     expect(await screen.findByText("Role payload invalid.")).toBeTruthy();
     expect(screen.queryByText("Request failed: 422")).toBeNull();
+  });
+
+  it("clears transition feedback when opening a different mission task", async () => {
+    const summaryState = structuredClone(MISSION_SUMMARY) as typeof MISSION_SUMMARY;
+    const taskEvents: Record<string, Array<Record<string, unknown>>> = {
+      "task-1": [
+        {
+          id: "evt-task-1-created",
+          task_id: "task-1",
+          task_title: "Draft legal brief",
+          event_type: "task_created",
+          message: "Task created",
+          details: "Draft legal brief",
+          from_state: "",
+          to_state: "draft",
+          metadata: {},
+          created_at: "2026-04-02T08:00:00+00:00"
+        }
+      ],
+      "task-3": [
+        {
+          id: "evt-task-3-created",
+          task_id: "task-3",
+          task_title: "Monitor court injunction",
+          event_type: "task_created",
+          message: "Task created",
+          details: "Monitor court injunction",
+          from_state: "",
+          to_state: "in_progress",
+          metadata: {},
+          created_at: "2026-04-02T06:00:00+00:00"
+        }
+      ]
+    };
+
+    setupDefaultFetchMock({
+      "/api/dashboard/summary": {
+        body: summaryState
+      },
+      "/api/tasks/task-1/events": () => ({
+        body: taskEvents["task-1"]
+      }),
+      "/api/tasks/task-3/events": () => ({
+        body: taskEvents["task-3"]
+      }),
+      "POST /api/tasks/task-1/transition": ({ init }) => {
+        const body = JSON.parse(String(init?.body)) as { to_state: string };
+        summaryState.tasks = summaryState.tasks.map((task) =>
+          task.id === "task-1"
+            ? {
+                ...task,
+                state: body.to_state,
+                updated_at: "2026-04-02T08:35:00+00:00"
+              }
+            : task
+        );
+        return {
+          body: summaryState.tasks.find((task) => task.id === "task-1") ?? {}
+        };
+      }
+    });
+
+    render(<App />);
+
+    fireEvent.click(await screen.findByRole("button", { name: /open task task-1/i }));
+    fireEvent.click(await screen.findByRole("button", { name: "Move to Intake Review" }));
+    expect(await screen.findByText("Task task-1 moved to intake_review.")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /open task task-3/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Task task-1 moved to intake_review.")).toBeNull();
+    });
   });
 
   it("renders runtime status, events, logs, and error summary", async () => {

@@ -9,6 +9,10 @@ from app.services.soul_catalog import SoulCatalog
 from app.services.task_store import TaskStore
 
 
+class RuntimeTelemetryUnavailable(RuntimeError):
+    pass
+
+
 class RuntimeGateway:
     def __init__(self, bridge_url: str | None = None) -> None:
         self.bridge_url = (bridge_url or os.environ.get("US_CLAW_BRIDGE_URL") or "http://127.0.0.1:8787").rstrip("/")
@@ -74,14 +78,14 @@ class RuntimeGateway:
     def list_events(self, limit: int = 10) -> list[dict[str, object]]:
         payload = self._fetch_json(f"/events?limit={limit}")
         if payload is None:
-            return []
+            raise RuntimeTelemetryUnavailable("Runtime events are unavailable from the OpenClaw bridge.")
         items = list(payload.get("items", payload))
         return [normalize_event(item) for item in items]
 
     def list_logs(self, limit: int = 20) -> list[dict[str, object]]:
         payload = self._fetch_json(f"/logs?limit={limit}")
         if payload is None:
-            return []
+            raise RuntimeTelemetryUnavailable("Runtime logs are unavailable from the OpenClaw bridge.")
         items = list(payload.get("items", payload))
         return [normalize_log(item) for item in items]
 

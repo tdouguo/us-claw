@@ -152,6 +152,8 @@ export function OrganizationView({ setSidecar }: OrganizationViewProps) {
 
     let cancelled = false;
 
+    setSelectedRole(null);
+    setError(null);
     setIsLoadingRoleDetail(true);
     fetchOrganizationRole(selectedEntitySlug, selectedRoleSlug)
       .then((role) => {
@@ -159,9 +161,11 @@ export function OrganizationView({ setSidecar }: OrganizationViewProps) {
           return;
         }
         setSelectedRole(role);
+        setError(null);
       })
       .catch((reason: Error) => {
         if (!cancelled) {
+          setSelectedRole(null);
           setError(reason.message);
         }
       })
@@ -289,6 +293,7 @@ export function OrganizationView({ setSidecar }: OrganizationViewProps) {
     if (
       !selectedRole ||
       selectedRole.entity_slug !== selectedEntitySlug ||
+      selectedRole.role_slug !== selectedRoleSlug ||
       isLoadingRoles ||
       isLoadingRoleDetail
     ) {
@@ -500,7 +505,8 @@ export function OrganizationView({ setSidecar }: OrganizationViewProps) {
                 isLoadingRoleDetail ||
                 !form.title.trim() ||
                 !selectedRole ||
-                selectedRole.entity_slug !== selectedEntitySlug
+                selectedRole.entity_slug !== selectedEntitySlug ||
+                selectedRole.role_slug !== selectedRoleSlug
               }
               type="submit"
             >
